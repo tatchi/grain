@@ -104,7 +104,7 @@ module MatchTreeCompiler = {
 
   let no_op = x => x;
   let compose_binding = (id, cexp, func, x) =>
-    AExp.let_(Nonrecursive, [(id, cexp)], func(x));
+    AExp.let_(Nonrecursive, Immutable, [(id, cexp)], func(x));
   let with_binding = (id, cexp) => compose_binding(id, cexp, no_op);
 
   let extract_bindings =
@@ -237,7 +237,7 @@ module MatchTreeCompiler = {
 
   let fold_tree = (setup, ans) =>
     List.fold_right(
-      ((name, exp), body) => AExp.let_(Nonrecursive, [(name, exp)], body),
+      ((name, exp), body) => AExp.let_(Nonrecursive, Immutable, [(name, exp)], body),
       setup,
       AExp.comp(ans),
     );
@@ -353,7 +353,7 @@ module MatchTreeCompiler = {
             tag,
             List.fold_right(
               ((name, exp), body) =>
-                AExp.let_(Nonrecursive, [(name, exp)], body),
+                AExp.let_(Nonrecursive, Immutable, [(name, exp)], body),
               extract_bindings(orig_pat, Comp.imm(expr)),
               helpA(branch),
             ),

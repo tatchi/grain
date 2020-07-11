@@ -200,6 +200,11 @@ module RegisterAllocation = {
     | [@implicit_arity] MPrim2(pop, i1, i2) =>
       [@implicit_arity]
       MPrim2(pop, apply_allocation_to_imm(i1), apply_allocation_to_imm(i2))
+    | MSet(bind, i) =>
+      MSet(
+        apply_allocation_to_bind(bind),
+        apply_allocations(allocs, i),
+      )
     | MStore(bs) =>
       MStore(
         List.map(
@@ -265,6 +270,8 @@ let run_register_allocation = (instrs: list(Mashtree.instr)) => {
       @ block_live_locals(d)
     | [@implicit_arity] MPrim2(_, i1, i2) =>
       imm_live_local(i1) @ imm_live_local(i2)
+    | MSet(b, i) =>
+      bind_live_local(b) @ live_locals(i)
     | MStore(bs) =>
       List.concat(
         List.map(((b, bk)) => bind_live_local(b) @ live_locals(bk), bs),
@@ -527,8 +534,11 @@ let rec compile_comp = (env, c) => {
   | [@implicit_arity] CPrim2(p2, arg1, arg2) =>
     [@implicit_arity]
     MPrim2(p2, compile_imm(env, arg1), compile_imm(env, arg2))
-  | [@implicit_arity] CAssign(arg1, arg2) =>
+  | [@implicit_arity] CBoxAssign(arg1, arg2) =>
     [@implicit_arity]
+    MBoxOp(MBoxUpdate(compile_imm(env, arg2)), compile_imm(env, arg1))
+  | [@implicit_arity] CAssign(arg1, arg2) =>
+    // MSet(find_id(arg1, env), {instr_desc: MImmediate(compile_imm(env, arg2)), instr_loc: c.comp_loc})
     MBoxOp(MBoxUpdate(compile_imm(env, arg2)), compile_imm(env, arg1))
   | CTuple(args) => MAllocate(MTuple(List.map(compile_imm(env), args)))
   | CArray(args) => MAllocate(MArray(List.map(compile_imm(env), args)))
@@ -598,7 +608,7 @@ and compile_anf_expr = (env, a) =>
       {instr_desc: MDrop(compile_comp(env, hd)), instr_loc: hd.comp_loc},
       ...compile_anf_expr(env, tl),
     ]
-  | AELet(global, recflag, binds, body) =>
+  | AELet(global, recflag, mutflag, binds, body) =>
     let get_loc = (idx, (id, _)) =>
       switch (global) {
       | Global => MGlobalBind(Int32.of_int(next_global(id)))
