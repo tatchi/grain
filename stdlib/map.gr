@@ -229,11 +229,11 @@ export let forEach = (fn, map) => {
 }
 
 export let reduce = (fn, init, map) => {
-  let acc = box(init);
+  let mut acc = init;
   forEach((key, value) => {
-    acc := fn(^acc, key, value);
+    acc = fn(acc, key, value);
   }, map);
-  ^acc
+  acc
 }
 
 export let keys = (map) => {
