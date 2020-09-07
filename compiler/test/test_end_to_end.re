@@ -1451,6 +1451,21 @@ let string_tests = {
   ];
 };
 
+let exception_tests = [
+  t("exception_1", "exception Foo; Foo", "<adt value>"),
+  t("exception_2", "export exception Foo; Foo", "Foo"),
+  t(
+    "exception_3",
+    "export exception Foo(Bool, Number); Foo(false, 6)",
+    "Foo(false, 6)",
+  ),
+  t(
+    "exception_4",
+    "export exception Foo(Bool, Number); export exception Bar; Bar",
+    "Bar",
+  ),
+];
+
 let data_tests = [
   tfile("basicdata", "basicdata", "(false, true, true)"),
   tfile(
@@ -1521,5 +1536,6 @@ let tests =
   @ optimization_tests
   @ string_tests
   @ data_tests
-  @ export_tests
-  @ comment_tests;
+  @ comment_tests
+  @ exception_tests
+  @ export_tests;
